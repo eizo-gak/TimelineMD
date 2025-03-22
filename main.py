@@ -28,45 +28,31 @@ def get_current_time_jst():
 
 # メッセージを変換する関数
 def convert_message(content):
-    match = re.match(r"^([０-９]{4})(.+?)。。(.+)", content)
+    match = re.match(r"^([０-９]{4})(.+?)。。(.+)", content)  # 時刻指定パターン
+    match_no_time = re.match(r"^。。(.+?)。。(.+)", content)  # JST時刻使用パターン
+
     if match:
-        full_width_time = match.group(1)  # 時刻（例: ２３５５）
-        title = match.group(2).strip()  # h2タイトル
-        body = match.group(3).strip()  # 記事本文
+        full_width_time, title, body = match.groups()
+        half_width_time = zenkaku_to_hankaku(full_width_time)
+        hour, minute = int(half_width_time[:2]), int(half_width_time[2:])
+        formatted_time = f"{hour:02d}:{minute:02d}" if hour < 26 and minute < 60 else get_current_time_jst(
+        )
+    elif match_no_time:
+        title, body = match_no_time.groups()
+        formatted_time = get_current_time_jst()
+    else:
+        return None
 
-        # 時刻を半角に変換
-        half_width_time = zenkaku_to_hankaku(
-            full_width_time)  # 例: "２３５５" → "2355"
+    # URLが含まれているかどうかをチェック
+    url_pattern = r'(https?://)?(www\.)?[\w\-]+\.[a-z]{2,}(/?[\w\-./?%&=]*)?'
+    url_match = re.search(url_pattern, body)
 
-        # 時刻フォーマットを修正（2355 → 23:55）
-        hour = int(half_width_time[:2])
-        minute = int(half_width_time[2:])
-
-        # 時刻が不正な場合（例: 分が60以上）
-        if hour >= 24 or minute >= 60:
-            formatted_time = get_current_time_jst()  # 不正な時刻は現在時刻を使用
-        else:
-            # 26時台も許容（例: 26:30）
-            if hour >= 26:
-                formatted_time = f"{hour}:{minute:02d}"  # 26:30 の形式
-            else:
-                formatted_time = f"{hour:02d}:{minute:02d}"  # 通常の時刻
-
-        # URLが含まれているかどうかをチェック（短縮URLも可）
-        url_pattern = r'(https?://)?(www\.)?[\w\-]+\.[a-z]{2,}(/[\w\-./?%&=]*)?'
-        url_match = re.search(url_pattern, body)
-
-        # URLがある場合、そのURLをメッセージに追加
-        if url_match:
-            url = url_match.group(0)
-            body = body.replace(url, '')  # 本文からURLを削除
-
-            # 変換後のメッセージにURLを追加
-            return f"↓\n## ・{formatted_time} {title}\n```\n{body}\n```{url}"
-        else:
-            return f"↓\n## ・{formatted_time} {title}\n```\n{body}\n```"
-
-    return None
+    if url_match:
+        url = url_match.group(0)
+        body = body.replace(url, '').strip()
+        return f"↓\n## ・{formatted_time} {title}\n```\n{body}\n```{url}"
+    else:
+        return f"↓\n## ・{formatted_time} {title}\n```\n{body}\n```"
 
 
 # メッセージが送信されたとき
