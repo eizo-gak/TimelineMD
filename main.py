@@ -4,6 +4,26 @@ import re
 from datetime import datetime, timedelta
 from discord.ext import commands
 
+# セッション時間を生かす（UptimeRobotで定期Ping）
+from flask import Flask
+from threading import Thread
+
+# セッション時間を生かす2
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Bot is alive!"
+
+def run():
+    app.run(host='0.0.0.0', port=8080)
+
+def keep_alive():
+    thread = Thread(target=run)
+    thread.start()
+
+
+
 # 環境変数からトークンを取得
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
@@ -72,6 +92,8 @@ async def on_message(message):
 
     await bot.process_commands(message)  # コマンド処理を続行
 
+# セッション生かす実行コマンド
+keep_alive()
 
 # Botを起動
 bot.run(TOKEN)
