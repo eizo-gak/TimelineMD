@@ -3,25 +3,31 @@ import os
 import re
 from datetime import datetime, timedelta
 from discord.ext import commands
-
-# セッション時間を生かす（UptimeRobotで定期Ping）
 from flask import Flask
 from threading import Thread
+import asyncio
+import logging
 
-# セッション時間を生かす2
+# ログ設定
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
+
+# セッションを保持するためのFlaskサーバー
 app = Flask('')
+
 
 @app.route('/')
 def home():
     return "Bot is alive!"
 
+
 def run():
     app.run(host='0.0.0.0', port=8080)
+
 
 def keep_alive():
     thread = Thread(target=run)
     thread.start()
-
 
 
 # 環境変数からトークンを取得
@@ -75,11 +81,32 @@ def convert_message(content):
         return f"↓\n## ・{formatted_time} {title}\n```\n{body}\n```"
 
 
+# ボット起動イベント
+@bot.event
+async def on_ready():
+    logging.info(f'Logged in as {bot.user} - {bot.user.id}')
+    logging.info('Bot is ready!')
+
+
+# エラーハンドリング
+@bot.event
+async def on_error(event, *args, **kwargs):
+    with open("error.log", "a") as f:
+        f.write(f"An error occurred: {event}\n")
+    logging.error(f"An error occurred in {event}. Restarting bot...",
+                  exc_info=True)
+    await asyncio.sleep(5)  # 再起動前に少し待つ
+    os.execv(sys.executable, ['python'] + sys.argv)
+
+
 # メッセージが送信されたとき
 @bot.event
 async def on_message(message):
     if message.author == bot.user:  # 自分のメッセージは無視
         return
+
+    if bot.user.mentioned_in(message):  # ボットがメンションされた場合
+        await message.channel.send("こんにちは！何かお手伝いしますか？")
 
     converted_text = convert_message(message.content)
 
@@ -92,8 +119,9 @@ async def on_message(message):
 
     await bot.process_commands(message)  # コマンド処理を続行
 
-# セッション生かす実行コマンド
+
+# セッション保持用サーバー起動
 keep_alive()
 
-# Botを起動
+# ボットを起動
 bot.run(TOKEN)
