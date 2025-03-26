@@ -4,4 +4,4 @@ services:
   - name: bot
     runtime: python
     build_command: pip install -r requirements.txt
-    start_command: python app/main.py
+    start_command: python main.py
