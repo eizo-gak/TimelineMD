@@ -1,0 +1,7 @@
+name: timelinemd
+type: web
+services:
+  - name: bot
+    runtime: python
+    build_command: pip install -r requirements.txt
+    start_command: python main.py
