@@ -1,10 +1,15 @@
-FROM python:3.9-slim
+# ベースイメージ
+FROM python:3.10-slim
 
+# 作業ディレクトリの設定
 WORKDIR /app
 
-COPY requirements.txt requirements.txt
+# 必要なファイルをコピー
+COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
+# アプリケーションのコードをコピー
 COPY . .
 
-CMD ["uvicorn", "app.server:app", "--host", "0.0.0.0", "--port", "8080"]
+# アプリケーションを起動
+CMD ["python", "main.py"]
