@@ -24,6 +24,9 @@ def run_flask():
 
 # 環境変数からトークンを取得
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
+if not TOKEN:
+    raise EnvironmentError("DISCORD_BOT_TOKEN is not set in environment variables.")
+
 
 # Botの設定
 intents = discord.Intents.default()
