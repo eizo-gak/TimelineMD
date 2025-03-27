@@ -1,5 +1,5 @@
 # ベースイメージ
-FROM python:3.10-slim
+FROM python:3.10
 
 # 作業ディレクトリの設定
 WORKDIR /app
